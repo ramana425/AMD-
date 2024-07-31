@@ -1,0 +1,58 @@
+# Constants
+T_FPS = 30  # Threshold FPS
+B = 5  # Buffer period in seconds
+
+# Variables
+C_FPS = 0  # Current FPS
+T = 0  # Timer
+eGPU_active = False  # Flag for eGPU status
+
+def monitor_fps():
+    # This function should get the current FPS from the monitoring tool
+    return get_current_fps()
+
+def switch_to_egpu():
+    # Implement the command to switch to eGPU
+    execute_switch_egpu_command()
+    eGPU_active = True
+    notify_user("Switched to external GPU")
+
+def switch_to_igpu():
+    # Implement the command to switch to iGPU
+    execute_switch_igpu_command()
+    eGPU_active = False
+    notify_user("Switched to internal GPU")
+
+def turn_on_smps():
+    # Implement the command to turn on the SMPS for the eGPU
+    execute_turn_on_smps_command()
+    notify_user("SMPS for external GPU turned on")
+
+def turn_off_smps():
+    # Implement the command to turn off the SMPS for the eGPU
+    execute_turn_off_smps_command()
+    notify_user("SMPS for external GPU turned off")
+
+while True:
+    C_FPS = monitor_fps()
+    
+    if C_FPS < T_FPS and not eGPU_active:
+        if T >= B:
+            turn_on_smps()
+            sleep(2)  # Wait for SMPS to stabilize
+            switch_to_egpu()
+            T = 0
+        else:
+            T += elapsed_time()  # Time since last check
+    elif C_FPS >= T_FPS and eGPU_active:
+        if T >= B:
+            switch_to_igpu()
+            sleep(2)  # Ensure proper GPU switch
+            turn_off_smps()
+            T = 0
+        else:
+            T += elapsed_time()  # Time since last check
+    else:
+        T = 0
+
+    sleep(1)  # Check every second
